@@ -53,7 +53,7 @@ if(IS_TOPLEVEL_PROJECT)
    set(CMAKE_CXX_STANDARD_REQUIRED ON)
    set(CMAKE_CXX_EXTENSIONS OFF)
    add_compile_options(-Wall -Wextra -pedantic -Werror)
-   include_directories(. src)
+   # include_directories(. src)
    if(sanitiser_mode STREQUAL srccov)
       # https://clang.llvm.org/docs/MemorySanitizer.html
       add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
