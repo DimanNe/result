@@ -375,6 +375,7 @@ TEST(TResultVoid, OkResultComparesWithErrRes_WithManyArgs) {
    EXPECT_RES_NOT_EQ(r, ErrRes("asdf", std::string::size_type(4)));
 }
 
+
 //------------------------------------------------------------------------
 // ErrResult !=/== OkRes/ErrRes
 
