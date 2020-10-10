@@ -344,6 +344,7 @@ TEST(TResultVoid, ErrResWithManyArgsWorksAsEmplace) {
    CheckErrIs(r, Expected);
 }
 
+
 //------------------------------------------------------------------------
 // OkResult !=/== OkRes/ErrRes
 
