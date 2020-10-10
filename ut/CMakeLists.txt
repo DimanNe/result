@@ -5,6 +5,7 @@ add_executable(${Project}
    # coresult.t.cpp
 )
 
+
 # ============= GTest =============
 target_link_libraries(${Project} PRIVATE diresult)
 target_link_libraries(${Project} PRIVATE gtest gmock gtest_main)
