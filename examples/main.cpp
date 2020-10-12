@@ -27,6 +27,8 @@ int main(int, char *[]) {
    std::cout << ReadSettings() << std::endl << std::endl;
    return 0;
 
+   // https://godbolt.org/z/8hxKTW
+
    // Expected output:
    // Err(Failed to ReadSettings @ Line:20: Failed to ConnectSocket @ Line:17: Failed to OpenSocket @ Line:13:
    // Failed to CreateSocket: SysErr: EINVAL Invalid argument)
