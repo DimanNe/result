@@ -66,6 +66,7 @@ endif()
 # Tell CMake what our projects are
 ##############################################################################################################
 add_subdirectory(src)
+add_subdirectory(examples)
 if(NOT IS_TOPLEVEL_PROJECT)
    enable_testing()
    add_subdirectory(ut)

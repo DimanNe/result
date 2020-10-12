@@ -11,6 +11,8 @@ namespace NDiRes {
       constexpr size_t ErrIndex = 1;
       template <size_t IndexToSet, class... Ts>
       struct TOkOrErrWrapper;
+      template <class...>
+      constexpr bool PostponeStaticAssert = false;
    }   // namespace NPrivate
 
    template <class COk, class CErr>
@@ -125,6 +127,14 @@ namespace NDiRes {
       TResult(T && err, std::enable_if_t<IsConvertibleOnlyToErr<T>()> * = nullptr) noexcept:
           Storage(std::forward<T>(err)) {}
 
+      template <class T>
+      TResult(T &&, std::enable_if_t<IsConvertibleToBoth<T>()> * = nullptr) noexcept {
+         static_assert(NPrivate::PostponeStaticAssert<T>,
+                       "Specified argument for Result<TOk, TErr> constructor can be converted to both: TOk "
+                       "and TErr, use OkRes() or ErrRes()");
+      }
+
+
       bool operator==(const TSelf &Another) const noexcept {
          return Storage == Another.Storage;
       }
@@ -207,6 +217,8 @@ namespace NDiRes {
       std::variant<TOk, TErr> Storage;
       template <size_t IndexToSet, class... Ts>
       friend struct NPrivate::TOkOrErrWrapper;
+      template <class o, class e>
+      friend class TCoResult;
    };
 
    template <class TErr>
@@ -230,9 +242,6 @@ namespace NDiRes {
 
 
    namespace NPrivate {
-      template <class...>
-      constexpr bool PostponeStaticAssert = false;
-
       template <size_t IndexToSet, class... Ts>
       struct TOkOrErrWrapper {
          TOkOrErrWrapper(Ts &&... Vs) noexcept: Tuple(std::forward<Ts>(Vs)...) {}

@@ -2,7 +2,7 @@ set(Project diresult_ut)
 
 add_executable(${Project}
    result.t.cpp
-   # coresult.t.cpp
+   coresult.t.cpp
 )
 
 
