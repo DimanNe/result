@@ -9,10 +9,12 @@ namespace NDiRes {
    namespace NPrivate {
       constexpr size_t OkIndex  = 0;
       constexpr size_t ErrIndex = 1;
-      template <size_t IndexToSet, class... Ts>
-      struct TOkOrErrWrapper;
       template <class...>
       constexpr bool PostponeStaticAssert = false;
+      template <size_t IndexToSet, class... Ts>
+      struct TOkOrErrWrapper {
+         std::tuple<Ts &&...> Tuple;
+      };
    }   // namespace NPrivate
 
    template <class COk, class CErr>
@@ -90,10 +92,32 @@ namespace NDiRes {
          return !(*this == std::move(Wrapper));
       }
 
+
+      // Initialisation from TOkOrErrWrapper
+
+      template <class... Ts>
+      TResult(NPrivate::TOkOrErrWrapper<NPrivate::OkIndex, Ts...> &&) noexcept {
+         // Was called from  NPrivate::TOkOrErrWrapper<0> OkRes()
+         static_assert(sizeof...(Ts) == 0,
+                       "You attempted to create Result<void, Err> representing success (void), but "
+                       "also specified argument(s) in OkRes(x) for the void type");
+      }
+      template <class... Ts>
+      TResult(NPrivate::TOkOrErrWrapper<NPrivate::ErrIndex, Ts...> && Wrapper) noexcept {
+         std::apply([this](auto &&... Vs) { Optional.template emplace(std::forward<decltype(Vs)>(Vs)...); },
+                    std::move(Wrapper.Tuple));
+      }
+      template <size_t IndexToSet, class... Ts>
+      TResult(const NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> &) noexcept {
+         static_assert(NPrivate::PostponeStaticAssert<IndexToSet, Ts...>,
+                       "TOkOrErrWrapper can be produced only by OkRes()/ErrRes() helper function, and is "
+                       "supposed to be immediately consumed by/assigned to a Result<>, do not store it in "
+                       "other variables");
+      }
+
+
    private:
       std::optional<TErr> Optional;
-      template <size_t IndexToSet, class... Ts>
-      friend struct NPrivate::TOkOrErrWrapper;
    };
 
 
@@ -212,11 +236,28 @@ namespace NDiRes {
          return !(*this == std::move(Wrapper));
       }
 
+
+      // Initialisation from TOkOrErrWrapper
+
+      template <size_t IndexToSet, class... Ts>
+      TResult(NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> && Wrapper) noexcept {
+         std::apply(
+             [this](auto &&... Vs) {
+                Storage.template emplace<IndexToSet>(std::forward<decltype(Vs)>(Vs)...);
+             },
+             std::move(Wrapper.Tuple));
+      }
+      template <size_t IndexToSet, class... Ts>
+      TResult(const NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> &) noexcept {
+         static_assert(NPrivate::PostponeStaticAssert<IndexToSet, Ts...>,
+                       "TOkOrErrWrapper can be produced only by OkRes()/ErrRes() helper function, and is "
+                       "supposed to be immediately consumed by/assigned to a Result<>, do not store it in "
+                       "other variables");
+      }
+
    private:
       TResult() noexcept = default;
       std::variant<TOk, TErr> Storage;
-      template <size_t IndexToSet, class... Ts>
-      friend struct NPrivate::TOkOrErrWrapper;
       template <class o, class e>
       friend class TCoResult;
    };
@@ -241,93 +282,16 @@ namespace NDiRes {
    }
 
 
-   namespace NPrivate {
-      template <size_t IndexToSet, class... Ts>
-      struct TOkOrErrWrapper {
-         TOkOrErrWrapper(Ts &&... Vs) noexcept: Tuple(std::forward<Ts>(Vs)...) {}
-
-         template <class Ok, class Err>
-         operator TResult<Ok, Err>() &&noexcept {
-            if constexpr(std::is_same_v<Ok, void>) {
-               if constexpr(IndexToSet == NPrivate::OkIndex) {
-                  // Was called from  NPrivate::TOkOrErrWrapper<0> OkRes()
-                  static_assert(sizeof...(Ts) == 0,
-                                "You attempted to create Result<void, Err> representing success (void), but "
-                                "also specified argument(s) in OkRes(x) for the void type");
-                  return {};   // Return Ok Result
-               } else
-                  return std::apply(
-                     [](auto &&... Vs) {
-                        TResult<Ok, Err> Result;
-                        Result.Optional.template emplace(std::forward<decltype(Vs)>(Vs)...);
-                        return Result;
-                     },
-                     std::move(Tuple));
-            } else
-               return std::apply(
-                  [](auto &&... Vs) {
-                     TResult<Ok, Err> Result;
-                     Result.Storage.template emplace<IndexToSet>(std::forward<decltype(Vs)>(Vs)...);
-                     return Result;
-                  },
-                  std::move(Tuple));
-         }
-         template <class Ok, class Err>
-         operator TResult<Ok, Err>() &noexcept {
-            static_assert(
-                PostponeStaticAssert<Ok, Err>,
-                "This type can be produced only by OkRes()/ErrRes() helper function, and is supposed to be "
-                "immediately consumed by/assigned to a Result<>, do not store it in other variables");
-         }
-
-         template <class Ok, class Err>
-         bool operator==(const TResult<Ok, Err> &r) &&noexcept {
-            return r == std::move(*this);
-         }
-         template <class Ok, class Err>
-         bool operator==([[maybe_unused]] const TResult<Ok, Err> &r) &noexcept {
-            static_assert(
-                PostponeStaticAssert<Ok, Err>,
-                "This type can be produced only by OkRes()/ErrRes() helper function, and is supposed to be "
-                "immediately consumed by/assigned to a Result<>, do not store it in other variables");
-         }
-         template <class Ok, class Err>
-         bool operator!=(const TResult<Ok, Err> &r) &&noexcept {
-            return !(std::move(*this) == r);
-         }
-         template <class Ok, class Err>
-         bool operator!=([[maybe_unused]] const TResult<Ok, Err> &r) &noexcept {
-            static_assert(
-                PostponeStaticAssert<Ok, Err>,
-                "This type can be produced only by OkRes()/ErrRes() helper function, and is supposed to be "
-                "immediately consumed by/assigned to a Result<>, do not store it in other variables");
-         }
-
-         std::tuple<Ts &&...> Tuple;
-      };
-
-
-
-   }   // namespace NPrivate
-
    inline NPrivate::TOkOrErrWrapper<NPrivate::OkIndex> OkRes() noexcept {   /// For TVoidRes
       return {};
    }
-   // template <class X>
-   // NPrivate::TOkOrErrWrapper<0, X> OkRes(X &&x) noexcept {
-   //    return {std::forward<X>(x)};
-   // }
    template <class... Ts>
    NPrivate::TOkOrErrWrapper<NPrivate::OkIndex, Ts...> OkRes(Ts &&... Vs) noexcept {
-      return {std::forward<Ts>(Vs)...};
+      return {{std::forward<Ts>(Vs)...}};
    }
-   // template <class X>
-   // NPrivate::TOkOrErrWrapper<1, X> ErrRes(X &&x) noexcept {
-   //    return {std::forward<X>(x)};
-   // }
    template <class... Ts>
    NPrivate::TOkOrErrWrapper<NPrivate::ErrIndex, Ts...> ErrRes(Ts &&... Vs) noexcept {
-      return {std::forward<Ts>(Vs)...};
+      return {{std::forward<Ts>(Vs)...}};
    }
 }   // namespace NDiRes
 

@@ -9,18 +9,16 @@ TCoResult<int, std::string> CreateSocket() {
    co_return 42;
 }
 TCoResult<int, std::string> OpenSocket() {
-   const int Socket = 2 + co_await CreateSocket().OrNestAndReturn();
+   const int Socket = 2 + co_await CreateSocket().OrPrependErrMsgAndReturn();
    co_return Socket * 2;
 }
 TCoResult<int, std::string> ConnectSocket() {
-   co_return co_await OpenSocket().OrNestAndReturn();
+   co_return co_await OpenSocket().OrPrependErrMsgAndReturn();
 }
 TCoResult<std::string, std::string> ReadSettings() {
-   co_await ConnectSocket().OrNestAndReturn();
+   co_await ConnectSocket().OrPrependErrMsgAndReturn();
    co_return OkRes("Here is our settings");
 }
-
-
 int main(int, char *[]) {
    std::cout << ReadSettings() << std::endl << std::endl;
    std::cout << "==== Second attempt ====" << std::endl;
