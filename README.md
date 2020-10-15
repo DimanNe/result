@@ -6,6 +6,6 @@ is more interesting** as it exploits C++20 coroutines to
 
 Since the latter is more interesting, let's start with it.
 
-# CoResult<Ok, Err>
+### `CoResult<Ok, Err>`
 
 TODO
