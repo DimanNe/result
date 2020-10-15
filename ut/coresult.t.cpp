@@ -13,7 +13,9 @@ using ::testing::StartsWith;
 // https://blog.panicsoftware.com/your-first-coroutine/
 // https://blog.panicsoftware.com/co_awaiting-coroutines/
 
-// ------------------------------------------------------------------------------------------------------
+// ======================================================================================================
+// ======================================================================================================
+// NonVoid Result Tests
 
 struct TCoResult_NonVoid_SameTypes: public ::testing::Test {
    TCoResult<int, double> F1() {
@@ -261,4 +263,230 @@ TEST_F(TCoResult_NonVoid_OrReturns_WithReferences, OrReturn) {
 
 // ======================================================================================================
 // ======================================================================================================
-// ======================================================================================================
+// Void Result Tests
+
+
+struct TCoResult_Void_SameTypes: public ::testing::Test {
+   TCoResult<void, double> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return ErrRes(2);
+      return {};
+   }
+   TCoResult<void, double> F2() {
+      co_await F1().OrReturn(1);
+   }
+};
+TEST_F(TCoResult_Void_SameTypes, Test) {
+   {
+      TCoResult<void, double> Result = F2();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_EQ(Result.Err(), 1);
+   }
+   {
+      TCoResult<void, double> Result = F2();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_Void_MovableOnly: public ::testing::Test {
+   TCoResult<void, std::unique_ptr<double>> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return ErrRes(MakeUnique(10.));
+      return {};
+   }
+   TCoResult<void, std::unique_ptr<double>> F2() {
+      co_await F1().OrReturn(MakeUnique(5.));
+      co_return;
+   }
+};
+TEST_F(TCoResult_Void_MovableOnly, Test) {
+   {
+      TCoResult<void, std::unique_ptr<double>> Result = F2();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_EQ(*Result.Err(), 5);
+   }
+   {
+      TCoResult<void, std::unique_ptr<double>> Result = F2();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_Void_DifferentTypes: public ::testing::Test {
+   TCoResult<void, double> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return 10.;
+      return {};
+   }
+   struct TSomeStruct {
+      bool operator==(const TSomeStruct &) const {
+         return true;
+      }
+   };
+   TCoResult<void, TSomeStruct> F2() {
+      co_await F1().OrReturn(TSomeStruct());
+   }
+};
+TEST_F(TCoResult_Void_DifferentTypes, Test) {
+   {
+      TCoResult<void, TSomeStruct> Result = F2();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_EQ(Result.Err(), TSomeStruct());
+   }
+   {
+      TCoResult<void, TSomeStruct> Result = F2();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_Void_OrReturns: public ::testing::Test {
+   TCoResult<void, std::string> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return "Err";
+      return {};
+   }
+   TCoResult<void, std::string> OrPrependErrMsgAndReturn() {
+      co_await F1().OrPrependErrMsgAndReturn("qwe");
+   }
+   TCoResult<void, std::string> OrReturnNewErr() {
+      co_await F1().OrReturnNewErr([](std::string &&ExistingErr) {
+         EXPECT_EQ(ExistingErr, "Err");
+         return "New Errorrrr";
+      });
+   }
+   TCoResult<void, std::string> OrReturn() {
+      co_await F1().OrReturn("x");
+   }
+};
+TEST_F(TCoResult_Void_OrReturns, OrPrependErrMsgAndReturn) {
+   {
+      TCoResult<void, std::string> Result = OrPrependErrMsgAndReturn();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(Result.Err(), StartsWith("qwe"));
+      EXPECT_THAT(Result.Err(), EndsWith("Err"));
+   }
+   {
+      TCoResult<void, std::string> Result = OrPrependErrMsgAndReturn();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+TEST_F(TCoResult_Void_OrReturns, OrReturnNewErr) {
+   {
+      TCoResult<void, std::string> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(Result.Err(), "New Errorrrr");
+   }
+   {
+      TCoResult<void, std::string> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+TEST_F(TCoResult_Void_OrReturns, OrReturn) {
+   {
+      TCoResult<void, std::string> Result = OrReturn();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(Result.Err(), "x");
+   }
+   {
+      TCoResult<void, std::string> Result = OrReturn();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_Void_OrReturns_WithMovableOnly: public ::testing::Test {
+   TCoResult<void, std::unique_ptr<int>> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return MakeUnique(1);
+      return {};
+   }
+   TCoResult<void, std::unique_ptr<int>> OrReturnNewErr() {
+      co_await F1().OrReturnNewErr([](std::unique_ptr<int> &&ExistingErr) {
+         EXPECT_EQ(*ExistingErr, 1);
+         return MakeUnique(5);
+      });
+   }
+   TCoResult<void, std::unique_ptr<int>> OrReturn() {
+      co_await F1().OrReturn(MakeUnique(5));
+   }
+};
+TEST_F(TCoResult_Void_OrReturns_WithMovableOnly, OrReturnNewErr) {
+   {
+      TCoResult<void, std::unique_ptr<int>> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(*Result.Err(), 5);
+   }
+   {
+      TCoResult<void, std::unique_ptr<int>> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+TEST_F(TCoResult_Void_OrReturns_WithMovableOnly, OrReturn) {
+   {
+      TCoResult<void, std::unique_ptr<int>> Result = OrReturn();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(*Result.Err(), 5);
+   }
+   {
+      TCoResult<void, std::unique_ptr<int>> Result = OrReturn();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_Void_OrReturns_WithReferences: public ::testing::Test {
+   TCoResult<void, std::string> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return "Err";
+      return {};
+   }
+   std::string                  ErrReference = "ErrReference";
+   TCoResult<void, std::string> OrReturnNewErr() {
+      co_await F1().OrReturnNewErr([this](std::string &&ExistingErr) -> std::string & {
+         EXPECT_EQ(ExistingErr, "Err");
+         return ErrReference;
+      });
+   }
+   TCoResult<void, std::string> OrReturn() {
+      co_await F1().OrReturn(ErrReference);
+   }
+};
+TEST_F(TCoResult_Void_OrReturns_WithReferences, OrReturnNewErr) {
+   {
+      TCoResult<void, std::string> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(Result.Err(), "ErrReference");
+      Result.Err().clear();
+      EXPECT_THAT(ErrReference, "ErrReference");
+   }
+   {
+      TCoResult<void, std::string> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+TEST_F(TCoResult_Void_OrReturns_WithReferences, OrReturn) {
+   {
+      TCoResult<void, std::string> Result = OrReturn();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(Result.Err(), "ErrReference");
+      Result.Err().clear();
+      EXPECT_THAT(ErrReference, "ErrReference");
+   }
+   {
+      TCoResult<void, std::string> Result = OrReturn();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}

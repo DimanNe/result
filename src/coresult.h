@@ -110,7 +110,7 @@ namespace NDiRes {
          if(this->IsOk()) {
             return {};
          } else {
-            return {CreateNewErrorMessage<TString>(Prefix, Function, Line, this->Err())};
+            return {NPrivate::ErrorMessageFrom<TString>(Prefix, Function, Line, this->Err())};
          }
       }
       template <class TCreateNewErr>
