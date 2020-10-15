@@ -490,3 +490,56 @@ TEST_F(TCoResult_Void_OrReturns_WithReferences, OrReturn) {
       EXPECT_TRUE(Result.IsOk());
    }
 }
+
+// ======================================================================================================
+// ======================================================================================================
+// Mixed
+
+struct TCoResult_Mixed_NonVoidToVoid: public ::testing::Test {
+   TCoResult<int, std::string> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return "Err";
+      return 1;
+   }
+   TCoResult<void, double> F2() {
+      co_await F1().OrReturn(2);
+   }
+};
+TEST_F(TCoResult_Mixed_NonVoidToVoid, OrReturnNewErr) {
+   {
+      TCoResult<void, double> Result = F2();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(Result.Err(), 2);
+   }
+   {
+      TCoResult<void, double> Result = F2();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+
+
+struct TCoResult_Mixed_VoidNonVoid: public ::testing::Test {
+   TCoResult<void, std::string> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return "Err";
+      return {};
+   }
+   TCoResult<std::string, double> F2() {
+      co_await F1().OrReturn(2);
+      co_return "Ok";
+   }
+};
+TEST_F(TCoResult_Mixed_VoidNonVoid, OrReturnNewErr) {
+   {
+      TCoResult<std::string, double> Result = F2();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_THAT(Result.Err(), 2);
+   }
+   {
+      TCoResult<std::string, double> Result = F2();
+      EXPECT_TRUE(Result.IsOk());
+      EXPECT_THAT(Result.Ok(), "Ok");
+   }
+}
