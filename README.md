@@ -52,7 +52,7 @@ TOk Ok = co_await ExpressionOfTypeResult<TOk, TErr> . OrPrependErrMsgAndReturn()
 * either **extract Ok value from it and assign it to the variable on the left**
 * or **return from the function** what is specified as parameter of `OrPrependErrMsgAndReturn()` function.
   Note, in this implementation, there are a family of `OrReturn` functions: (1) `OrPrependErrMsgAndReturn(...)`
-  (2) `OrReturnNewErr(...)`, (3) `OrReturn(...)`.**
+  (2) `OrReturnNewErr(...)`, (3) `OrReturn(...)`.
 
 
 
