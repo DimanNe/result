@@ -7,9 +7,9 @@
 
 namespace NDiRes {
 
-   template <class T>
-   concept StringPrependable = requires(T a) {
-      std::string() + a;
+   template <class TString, class T>
+   concept StringPrependable = requires(TString String, T a) {
+      String + a;
    };
 
    template <class TFrom, class TTo>
@@ -17,6 +17,15 @@ namespace NDiRes {
        std::is_convertible_v<TFrom, TTo> &&requires(std::add_rvalue_reference_t<TFrom> (&f)()) {
       static_cast<TTo>(f());
    };
+
+   namespace NPrivate {
+      constexpr std::string_view DefaultErrMsgPrefix = "Failed to ";
+      template <class TString, class TStringView, class TErr>
+      TString ErrorMessageFrom(TStringView Prefix, const char *Function, const int Line, TErr &&Err) {
+         return TString(Prefix) + Function + " @ Line:" + std::to_string(Line) + ": " +
+                std::forward<TErr>(Err);
+      }
+   }   // namespace NPrivate
 
    template <class COk, class CErr>
    class TCoResult;
@@ -39,14 +48,13 @@ namespace NDiRes {
          TReturn &operator=(const TReturn &) = delete;
          TReturn(TReturn &&)                 = delete;
          TReturn &operator=(TReturn &&) = delete;
-         TReturn(THandle handle) {
+         TReturn(THandle handle) noexcept {
             assert(handle);
             Handle = handle;
          }
-         ~TReturn() {
+         ~TReturn() noexcept {
             Handle.destroy();
          }
-
          THandle Handle;
       };
 
@@ -61,22 +69,22 @@ namespace NDiRes {
             return {};
          }
          TResult<void, TErr> ReturnResult;
-         template <class T>
+         template <ConvertibleTo<TErr> T>
          void return_error_value(T &&Error) noexcept {
             // From await_suspend => We know it must be an rvalue, hence move()
             ReturnResult = std::move(Error);
          }
          void return_void() noexcept {}
-         void unhandled_exception() {
+         void unhandled_exception() noexcept {
             std::terminate();
          }
       };
 
+      template <class TExternalErr>
       struct [[nodiscard]] TInternalAwaitabler {   // Awaiter + Awaitable
-         std::optional<TErr> ErrorValue;
+         std::optional<TExternalErr> ErrorValue;
 
          bool await_ready() noexcept {
-            // Need to decide what to do: continue this function or return to caller
             return ErrorValue.has_value() == false;
          }
          template <class TExternalHandle>
@@ -93,20 +101,21 @@ namespace NDiRes {
    public:
       TCoResult(TReturn && Return) noexcept: TBase(std::move(Return.Handle.promise().ReturnResult)) {}
 
-      TInternalAwaitabler OrPrependErrMsgAndReturn(
-          std::string_view Prefix = "Failed to ",
-          // The following builtins will be replaced with struct std::source_location
-          // https://en.cppreference.com/w/cpp/experimental/source_location
-          const char *Function = __builtin_FUNCTION(),
+      // Each Company has its own implementation of string
+      template <class TString = std::string, class TStringView = std::string_view>
+      requires StringPrependable<TString, TErr> TInternalAwaitabler<TString> OrPrependErrMsgAndReturn(
+          TStringView Prefix   = NPrivate::DefaultErrMsgPrefix,
+          const char *Function = __builtin_FUNCTION(),   // Replace with std::source_location
           const int   Line     = __builtin_LINE()) noexcept {
          if(this->IsOk()) {
             return {};
          } else {
-            return {std::string(Prefix) + Function + " @ Line:" + std::to_string(Line) + ": " + this->Err()};
+            return {CreateNewErrorMessage<TString>(Prefix, Function, Line, this->Err())};
          }
       }
       template <class TCreateNewErr>
-      TInternalAwaitabler OrReturnNewErr(TCreateNewErr && CreateNewErr) noexcept {
+      TInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>> OrReturnNewErr(
+          TCreateNewErr && CreateNewErr) noexcept {
          if(this->IsOk()) {
             return {};
          } else {
@@ -114,7 +123,7 @@ namespace NDiRes {
          }
       }
       template <class T>
-      TInternalAwaitabler OrReturn(T && Something) noexcept {
+      TInternalAwaitabler<std::decay_t<T>> OrReturn(T && Something) noexcept {
          if(this->IsOk()) {
             return {};
          } else {
@@ -149,7 +158,6 @@ namespace NDiRes {
          ~TReturn() {
             Handle.destroy();
          }
-
          THandle Handle;
       };
 
@@ -173,7 +181,7 @@ namespace NDiRes {
          void return_value(T &&Something) noexcept {   // from co_return expr
             ReturnResult = std::forward<T>(Something);
          }
-         void unhandled_exception() {
+         void unhandled_exception() noexcept {
             std::terminate();
          }
       };
@@ -183,7 +191,6 @@ namespace NDiRes {
          std::variant<TOk *, TExternalErr> OkRefOrErrorValue;
 
          bool await_ready() noexcept {
-            // Need to decide what to do: continue this function or return to caller
             return OkRefOrErrorValue.index() == NPrivate::OkIndex;
          }
          template <class TExternalHandle>
@@ -201,21 +208,18 @@ namespace NDiRes {
    public:
       TCoResult(TReturn && Return) noexcept: TBase(std::move(Return.Handle.promise().ReturnResult)) {}
 
-      TInternalAwaitabler<std::string> OrPrependErrMsgAndReturn(
-          std::string_view Prefix = "Failed to ",
-          // The following builtins will be replaced with struct std::source_location
-          // https://en.cppreference.com/w/cpp/experimental/source_location
-          const char *Function = __builtin_FUNCTION(),
+      // Each Company has its own implementation of string
+      template <class TString = std::string, class TStringView = std::string_view>
+      requires StringPrependable<TString, TErr> TInternalAwaitabler<TString> OrPrependErrMsgAndReturn(
+          TStringView Prefix   = NPrivate::DefaultErrMsgPrefix,
+          const char *Function = __builtin_FUNCTION(),   // Replace with std::source_location
           const int   Line     = __builtin_LINE()) noexcept {
-         static_assert(
-             StringPrependable<TErr>,
-             "This function prepends string description to TErr type, which is not string-prependable");
          if(this->IsOk()) {
             return {.OkRefOrErrorValue {std::in_place_index_t<0>(), &this->Ok()}};
          } else {
-            std::string NewErrMsg =
-                std::string(Prefix) + Function + " @ Line:" + std::to_string(Line) + ": " + this->Err();
-            return {.OkRefOrErrorValue {std::in_place_index_t<1>(), std::move(NewErrMsg)}};
+            return {.OkRefOrErrorValue {
+                std::in_place_index_t<1>(),
+                NPrivate::ErrorMessageFrom<TString>(Prefix, Function, Line, this->Err())}};
          }
       }
       template <class TCreateNewErr>
