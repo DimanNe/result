@@ -58,6 +58,6 @@ will, depending on the contents of the Result expression
 
 ### `Result<Ok, Err>`
 
-If you are wondering what are the problems with exceptions, you can start
+If you are wondering what the problems with exceptions are, you can start
 [here](https://www.reddit.com/r/cpp/comments/cliw5j/should_not_exceptions_be_finally_deprecated/).
 
