@@ -65,7 +65,8 @@ struct TCoResult_NonVoid_CoAwaitTemporary: public ::testing::Test {
       co_return std::move(Ok);
    }
    TCoResult<std::unique_ptr<int>, std::string> OrReturn() {
-      // std::unique_ptr<int> &Ok = co_await F1().OrReturn(""); // Should not compile: rvalue cannot bind to non-const lvalue
+      // std::unique_ptr<int> &Ok = co_await F1().OrReturn(""); // Should not compile: rvalue cannot bind to
+      // non-const lvalue
       std::unique_ptr<int> Ok = co_await F1().OrReturn("");
       std::cout << *Ok << std::endl;
       co_return std::move(Ok);
@@ -79,6 +80,52 @@ TEST_F(TCoResult_NonVoid_CoAwaitTemporary, OrReturnNewErr) {
 }
 TEST_F(TCoResult_NonVoid_CoAwaitTemporary, OrReturn) {
    (void)OrReturn();
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_NonVoid_CanHoldTypesWithoutDefaultConstructor: public ::testing::Test {
+   struct TSomeStruct {
+      TSomeStruct() = delete;
+      TSomeStruct(int) {}
+      TSomeStruct(TSomeStruct &&) {}
+      TSomeStruct &operator=(TSomeStruct &&) {
+         return *this;
+      }
+   };
+
+   TCoResult<TSomeStruct, TSomeStruct> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return ErrRes(TSomeStruct(2));
+      return OkRes(TSomeStruct(1));
+   }
+   TCoResult<TSomeStruct, TSomeStruct> OrReturnNewErr() {
+      co_return OkRes(co_await F1().OrReturnNewErr([](TSomeStruct &&) { return TSomeStruct(3); }));
+   }
+   TCoResult<TSomeStruct, TSomeStruct> OrReturn() {
+      co_return OkRes(co_await F1().OrReturn(TSomeStruct(3)));
+   }
+};
+TEST_F(TCoResult_NonVoid_CanHoldTypesWithoutDefaultConstructor, OrReturnNewErr) {
+   {
+      TCoResult<TSomeStruct, TSomeStruct> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsErr());
+   }
+   {
+      TCoResult<TSomeStruct, TSomeStruct> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+TEST_F(TCoResult_NonVoid_CanHoldTypesWithoutDefaultConstructor, OrReturn) {
+   {
+      TCoResult<TSomeStruct, TSomeStruct> Result = OrReturn();
+      EXPECT_TRUE(Result.IsErr());
+   }
+   {
+      TCoResult<TSomeStruct, TSomeStruct> Result = OrReturn();
+      EXPECT_TRUE(Result.IsOk());
+   }
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -316,6 +363,54 @@ TEST_F(TCoResult_Void_CanReturnErr, Test) {
       TCoResult<void, double> Result = F2();
       EXPECT_TRUE(Result.IsErr());
       EXPECT_EQ(Result.Err(), 3);
+   }
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_Void_CanHoldTypesWithoutDefaultConstructor: public ::testing::Test {
+   struct TSomeStruct {
+      TSomeStruct() = delete;
+      TSomeStruct(int) {}
+      TSomeStruct(TSomeStruct &&) {}
+      TSomeStruct &operator=(TSomeStruct &&) {
+         return *this;
+      }
+   };
+
+   TCoResult<void, TSomeStruct> F1() {
+      static int Counter = 1;
+      if(++Counter % 2 == 0)
+         return ErrRes(TSomeStruct(2));
+      return {};
+   }
+   TCoResult<void, TSomeStruct> OrReturnNewErr() {
+      co_await F1().OrReturnNewErr([](TSomeStruct &&) { return TSomeStruct(3); });
+      co_return {};
+   }
+   TCoResult<void, TSomeStruct> OrReturn() {
+      co_await F1().OrReturn(TSomeStruct(3));
+      co_return {};
+   }
+};
+TEST_F(TCoResult_Void_CanHoldTypesWithoutDefaultConstructor, OrReturnNewErr) {
+   {
+      TCoResult<void, TSomeStruct> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsErr());
+   }
+   {
+      TCoResult<void, TSomeStruct> Result = OrReturnNewErr();
+      EXPECT_TRUE(Result.IsOk());
+   }
+}
+TEST_F(TCoResult_Void_CanHoldTypesWithoutDefaultConstructor, OrReturn) {
+   {
+      TCoResult<void, TSomeStruct> Result = OrReturn();
+      EXPECT_TRUE(Result.IsErr());
+   }
+   {
+      TCoResult<void, TSomeStruct> Result = OrReturn();
+      EXPECT_TRUE(Result.IsOk());
    }
 }
 

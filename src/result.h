@@ -152,7 +152,7 @@ namespace NDiRes {
           Storage(std::forward<T>(err)) {}
 
       template <class T>
-      TResult(T &&, std::enable_if_t<IsConvertibleToBoth<T>()> * = nullptr) noexcept {
+      TResult(T &&, std::enable_if_t<IsConvertibleToBoth<T>()> * = nullptr) noexcept: TResult() {
          static_assert(NPrivate::PostponeStaticAssert<T>,
                        "Specified argument for Result<TOk, TErr> constructor can be converted to both: TOk "
                        "and TErr, use OkRes() or ErrRes()");
@@ -240,7 +240,7 @@ namespace NDiRes {
       // Initialisation from TOkOrErrWrapper
 
       template <size_t IndexToSet, class... Ts>
-      TResult(NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> && Wrapper) noexcept {
+      TResult(NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> && Wrapper) noexcept: TResult() {
          std::apply(
              [this](auto &&... Vs) {
                 Storage.template emplace<IndexToSet>(std::forward<decltype(Vs)>(Vs)...);
@@ -256,8 +256,8 @@ namespace NDiRes {
       }
 
    private:
-      TResult() noexcept = default;
-      std::variant<TOk, TErr> Storage;
+      TResult() noexcept: Storage(std::in_place_index_t<2>()) {}
+      std::variant<TOk, TErr, std::monostate> Storage;
       template <class o, class e>
       friend class TCoResult;
    };
