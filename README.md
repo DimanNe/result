@@ -55,6 +55,31 @@ TOk Ok = co_await ExpressionOfTypeResult<TOk, TErr> . OrPrependErrMsgAndReturn()
   (2) `OrReturnNewErr(...)`, (3) `OrReturn(...)`.
 
 
+##### More features / description:
+<details><summary>... if you wish</summary><p>
+
+##### No redundant/temporary Result<void, TErr> variables
+For `TResult<void, TErr>` you no longer need to create a variable that would hold the result (only
+to append error explanation later):
+
+Before:
+```
+// RenameResult is needed only because it holds Error (in case of error)
+TResult<void, std::string> RenameResult = Rename(Old, New);
+if(RenameResult.IsErr()) {
+   std::string NewError = "Failed to rename from " + Old + " to " + New + " " + RenameResult.Err();
+   return NewError;
+}
+```
+After:
+```
+co_await Rename(Old, New).OrReturnNewErr([&](std::string &&Err) {
+   return "Failed to rename from " + Old + " to " + New + " " + Err;
+});
+```
+
+</p></details>
+
 
 ### `Result<Ok, Err>`
 
