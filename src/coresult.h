@@ -19,6 +19,21 @@ namespace NDiRes {
    };
 
    namespace NPrivate {
+      template <class T, class U>
+      concept NotSame = std::is_same_v<T, U> == false;
+   }
+   template <class T, class U>
+   concept NotSameAs = NPrivate::NotSame<T, U> &&NPrivate::NotSame<U, T>;
+
+   template <class TCallable, class TOldErr>
+   concept CallableCanGenerateNewErrFromOldErr = requires(TCallable Callable, TOldErr Err) {
+      // clang-format off
+      { Callable(std::move(Err)) } -> NotSameAs<void>;
+      // clang-format on
+   };
+
+
+   namespace NPrivate {
       constexpr std::string_view DefaultErrMsgPrefix = "Failed to ";
       template <class TString, class TStringView, class TErr>
       TString ErrorMessageFrom(TStringView Prefix, const char *Function, const int Line, TErr &&Err) {
@@ -113,13 +128,13 @@ namespace NDiRes {
             return {NPrivate::ErrorMessageFrom<TString>(Prefix, Function, Line, this->Err())};
          }
       }
-      template <class TCreateNewErr>
-      TInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>> OrReturnNewErr(
-          TCreateNewErr && CreateNewErr) noexcept {
+      template <CallableCanGenerateNewErrFromOldErr<TErr> TCreateNewErr>
+      auto OrReturnNewErr(TCreateNewErr && CreateNewErr) noexcept {
+         using TRet = TInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>>;
          if(this->IsOk()) {
-            return {};
+            return TRet {};
          } else {
-            return {CreateNewErr(std::move(this->Err()))};
+            return TRet {CreateNewErr(std::move(this->Err()))};
          }
       }
       template <class T>
@@ -222,13 +237,14 @@ namespace NDiRes {
                 NPrivate::ErrorMessageFrom<TString>(Prefix, Function, Line, this->Err())}};
          }
       }
-      template <class TCreateNewErr>
-      TInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>> OrReturnNewErr(
-          TCreateNewErr && CreateNewErr) noexcept {
+      template <CallableCanGenerateNewErrFromOldErr<TErr> TCreateNewErr>
+      auto OrReturnNewErr(TCreateNewErr && CreateNewErr) noexcept {
+         using TRet = TInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>>;
          if(this->IsOk()) {
-            return {.OkRefOrErrorValue {std::in_place_index_t<0>(), &this->Ok()}};
+            return TRet {.OkRefOrErrorValue {std::in_place_index_t<0>(), &this->Ok()}};
          } else {
-            return {.OkRefOrErrorValue {std::in_place_index_t<1>(), CreateNewErr(std::move(this->Err()))}};
+            return TRet {
+                .OkRefOrErrorValue {std::in_place_index_t<1>(), CreateNewErr(std::move(this->Err()))}};
          }
       }
       template <class T>
