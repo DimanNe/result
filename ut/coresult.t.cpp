@@ -3,11 +3,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <iostream>
+#include <string>
 #include <util/compiler.h>
 #include <util/memory.h>
 
 using ::testing::EndsWith;
 using ::testing::StartsWith;
+using namespace std::string_literals;
 
 // Help:
 // https://blog.panicsoftware.com/your-first-coroutine/
@@ -40,6 +42,43 @@ TEST_F(TCoResult_NonVoid_SameTypes, Test) {
       EXPECT_TRUE(Result.IsOk());
       EXPECT_EQ(Result.Ok(), 4);
    }
+}
+
+
+// ------------------------------------------------------------------------------------------------------
+
+struct TCoResult_NonVoid_CoAwaitTemporary: public ::testing::Test {
+   TCoResult<std::unique_ptr<int>, std::string> F1() {
+      return MakeUnique(2);
+   }
+   TCoResult<std::unique_ptr<int>, std::string> OrPrependErrMsgAndReturn() {
+      // std::unique_ptr<int> &Ok = co_await F1().OrReturn(2); // Should not compile: rvalue cannot bind to non-const lvalue
+      std::unique_ptr<int> Ok = co_await F1().OrPrependErrMsgAndReturn();
+      std::cout << *Ok << std::endl;
+      co_return std::move(Ok);
+   }
+   TCoResult<std::unique_ptr<int>, std::string> OrReturnNewErr() {
+      // TMyStruct &Ok = co_await F1().OrReturn(2); // Should not compile: rvalue cannot bind to non-const
+      // lvalue
+      std::unique_ptr<int> Ok = co_await F1().OrReturnNewErr([](std::string &&) { return ""; });
+      std::cout << *Ok << std::endl;
+      co_return std::move(Ok);
+   }
+   TCoResult<std::unique_ptr<int>, std::string> OrReturn() {
+      // std::unique_ptr<int> &Ok = co_await F1().OrReturn(""); // Should not compile: rvalue cannot bind to non-const lvalue
+      std::unique_ptr<int> Ok = co_await F1().OrReturn("");
+      std::cout << *Ok << std::endl;
+      co_return std::move(Ok);
+   }
+};
+TEST_F(TCoResult_NonVoid_CoAwaitTemporary, OrPrependErrMsgAndReturn) {
+   (void)OrPrependErrMsgAndReturn();
+}
+TEST_F(TCoResult_NonVoid_CoAwaitTemporary, OrReturnNewErr) {
+   (void)OrReturnNewErr();
+}
+TEST_F(TCoResult_NonVoid_CoAwaitTemporary, OrReturn) {
+   (void)OrReturn();
 }
 
 // ------------------------------------------------------------------------------------------------------

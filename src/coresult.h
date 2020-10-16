@@ -207,8 +207,10 @@ namespace NDiRes {
       };
 
       template <class TExternalErr>
-      struct [[nodiscard]] TInternalAwaitabler {   // Awaiter + Awaitable
+      struct [[nodiscard]] TCommonInternalAwaitabler {   // Awaiter + Awaitable
          std::variant<TOk *, TExternalErr> OkRefOrErrorValue;
+         template <class... Ts>
+         TCommonInternalAwaitabler(Ts && ... Vs): OkRefOrErrorValue(std::forward<Ts>(Vs)...) {}
 
          bool await_ready() noexcept {
             return OkRefOrErrorValue.index() == NPrivate::OkIndex;
@@ -219,47 +221,91 @@ namespace NDiRes {
             assert(!await_ready());
             Handle.promise().return_error_value(std::move(std::get<NPrivate::ErrIndex>(OkRefOrErrorValue)));
          }
+      };
+      // clang-format off
+      template <class TExternalErr>
+      struct [[nodiscard]] TLValueInternalAwaitabler: public TCommonInternalAwaitabler<TExternalErr> {
+         template <class... Ts>
+         TLValueInternalAwaitabler(Ts&&... Vs):
+            TCommonInternalAwaitabler<TExternalErr>(std::forward<Ts>(Vs)...) {}
          TOk &await_resume() noexcept {   // Result is Ok => Return its Ok() and continue execution
-            assert(await_ready());
-            return *std::get<NPrivate::OkIndex>(OkRefOrErrorValue);
+            assert(this->await_ready());
+            return *std::get<NPrivate::OkIndex>(this->OkRefOrErrorValue);
          }
       };
+      template <class TExternalErr>
+      struct [[nodiscard]] TRValueInternalAwaitabler: public TCommonInternalAwaitabler<TExternalErr> {
+         template <class... Ts>
+         TRValueInternalAwaitabler(Ts&&... Vs):
+            TCommonInternalAwaitabler<TExternalErr>(std::forward<Ts>(Vs)...) {}
+         TOk &&await_resume() noexcept {   // Result is Ok => Return its Ok() and continue execution
+            assert(this->await_ready());
+            return std::move(*std::get<NPrivate::OkIndex>(this->OkRefOrErrorValue));
+         }
+      };
+      // clang-format on
 
    public:
-      TCoResult(TReturn && Return) noexcept: TBase(std::move(Return.Handle.promise().ReturnResult)) {}
+      TCoResult(TReturn &&Return) noexcept: TBase(std::move(Return.Handle.promise().ReturnResult)) {}
 
       // Each Company has its own implementation of string
       template <class TString = std::string, class TStringView = std::string_view>
-      requires StringPrependable<TString, TErr> TInternalAwaitabler<TString> OrPrependErrMsgAndReturn(
+      requires StringPrependable<TString, TErr> TLValueInternalAwaitabler<TString> OrPrependErrMsgAndReturn(
           TStringView Prefix   = NPrivate::DefaultErrMsgPrefix,
           const char *Function = __builtin_FUNCTION(),   // Replace with std::source_location
-          const int   Line     = __builtin_LINE()) noexcept {
+          const int   Line     = __builtin_LINE()) & noexcept {
          if(this->IsOk()) {
-            return {.OkRefOrErrorValue {std::in_place_index_t<0>(), &this->Ok()}};
+            return {std::in_place_index_t<0>(), &this->Ok()};
          } else {
-            return {.OkRefOrErrorValue {
-                std::in_place_index_t<1>(),
-                NPrivate::ErrorMessageFrom<TString>(Prefix, Function, Line, this->Err())}};
+            return {std::in_place_index_t<1>(),
+                    NPrivate::ErrorMessageFrom<TString>(Prefix, Function, Line, this->Err())};
+         }
+      }
+      template <class TString = std::string, class TStringView = std::string_view>
+      requires StringPrependable<TString, TErr> TRValueInternalAwaitabler<TString> OrPrependErrMsgAndReturn(
+          TStringView Prefix   = NPrivate::DefaultErrMsgPrefix,
+          const char *Function = __builtin_FUNCTION(),   // Replace with std::source_location
+          const int   Line     = __builtin_LINE()) && noexcept {
+         if(this->IsOk()) {
+            return {std::in_place_index_t<0>(), &this->Ok()};
+         } else {
+            return {std::in_place_index_t<1>(),
+                    NPrivate::ErrorMessageFrom<TString>(Prefix, Function, Line, this->Err())};
          }
       }
       template <CallableCanGenerateNewErrFromOldErr<TErr> TCreateNewErr>
-      auto OrReturnNewErr(TCreateNewErr && CreateNewErr) noexcept {
-         using TRet = TInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>>;
+      auto OrReturnNewErr(TCreateNewErr &&CreateNewErr) & noexcept {
+         using TRet = TLValueInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>>;
          if(this->IsOk()) {
-            return TRet {.OkRefOrErrorValue {std::in_place_index_t<0>(), &this->Ok()}};
+            return TRet {std::in_place_index_t<0>(), &this->Ok()};
          } else {
-            return TRet {
-                .OkRefOrErrorValue {std::in_place_index_t<1>(), CreateNewErr(std::move(this->Err()))}};
+            return TRet {std::in_place_index_t<1>(), CreateNewErr(std::move(this->Err()))};
+         }
+      }
+      template <CallableCanGenerateNewErrFromOldErr<TErr> TCreateNewErr>
+      auto OrReturnNewErr(TCreateNewErr &&CreateNewErr) && noexcept {
+         using TRet = TRValueInternalAwaitabler<std::decay_t<std::invoke_result_t<TCreateNewErr, TErr &&>>>;
+         if(this->IsOk()) {
+            return TRet {std::in_place_index_t<0>(), &this->Ok()};
+         } else {
+            return TRet {std::in_place_index_t<1>(), CreateNewErr(std::move(this->Err()))};
          }
       }
       template <class T>
-      TInternalAwaitabler<std::decay_t<T>> OrReturn(T && Something) noexcept {
+      TLValueInternalAwaitabler<std::decay_t<T>> OrReturn(T &&Something) & noexcept {
          if(this->IsOk()) {
-            return {.OkRefOrErrorValue {std::in_place_index_t<0>(), &this->Ok()}};
+            return {std::in_place_index_t<0>(), &this->Ok()};
          } else {
-            return {.OkRefOrErrorValue {std::in_place_index_t<1>(), std::forward<T>(Something)}};
+            return {std::in_place_index_t<1>(), std::forward<T>(Something)};
+         }
+      }
+      template <class T>
+      TRValueInternalAwaitabler<std::decay_t<T>> OrReturn(T &&Something) && noexcept {
+         if(this->IsOk()) {
+            return {std::in_place_index_t<0>(), &this->Ok()};
+         } else {
+            return {std::in_place_index_t<1>(), std::forward<T>(Something)};
          }
       }
    };
-
 }   // namespace NDiRes
