@@ -265,6 +265,23 @@ TEST_F(TCoResult_NonVoid_OrReturns_WithReferences, OrReturn) {
 // ======================================================================================================
 // Void Result Tests
 
+struct TCoResult_Void_CanReturnErr: public ::testing::Test {
+   TCoResult<void, double> F2() {
+      co_await TCoResult<void, double>().OrReturn(2);
+      co_return 3;
+   }
+};
+
+TEST_F(TCoResult_Void_CanReturnErr, Test) {
+   {
+      TCoResult<void, double> Result = F2();
+      EXPECT_TRUE(Result.IsErr());
+      EXPECT_EQ(Result.Err(), 3);
+   }
+}
+
+// ------------------------------------------------------------------------------------------------------
+
 
 struct TCoResult_Void_SameTypes: public ::testing::Test {
    TCoResult<void, double> F1() {
@@ -275,6 +292,7 @@ struct TCoResult_Void_SameTypes: public ::testing::Test {
    }
    TCoResult<void, double> F2() {
       co_await F1().OrReturn(1);
+      co_return {};
    }
 };
 TEST_F(TCoResult_Void_SameTypes, Test) {
@@ -300,7 +318,7 @@ struct TCoResult_Void_MovableOnly: public ::testing::Test {
    }
    TCoResult<void, std::unique_ptr<double>> F2() {
       co_await F1().OrReturn(MakeUnique(5.));
-      co_return;
+      co_return {};
    }
 };
 TEST_F(TCoResult_Void_MovableOnly, Test) {
@@ -331,6 +349,7 @@ struct TCoResult_Void_DifferentTypes: public ::testing::Test {
    };
    TCoResult<void, TSomeStruct> F2() {
       co_await F1().OrReturn(TSomeStruct());
+      co_return {};
    }
 };
 TEST_F(TCoResult_Void_DifferentTypes, Test) {
@@ -356,15 +375,18 @@ struct TCoResult_Void_OrReturns: public ::testing::Test {
    }
    TCoResult<void, std::string> OrPrependErrMsgAndReturn() {
       co_await F1().OrPrependErrMsgAndReturn("qwe");
+      co_return {};
    }
    TCoResult<void, std::string> OrReturnNewErr() {
       co_await F1().OrReturnNewErr([](std::string &&ExistingErr) {
          EXPECT_EQ(ExistingErr, "Err");
          return "New Errorrrr";
       });
+      co_return {};
    }
    TCoResult<void, std::string> OrReturn() {
       co_await F1().OrReturn("x");
+      co_return {};
    }
 };
 TEST_F(TCoResult_Void_OrReturns, OrPrependErrMsgAndReturn) {
@@ -416,9 +438,11 @@ struct TCoResult_Void_OrReturns_WithMovableOnly: public ::testing::Test {
          EXPECT_EQ(*ExistingErr, 1);
          return MakeUnique(5);
       });
+      co_return {};
    }
    TCoResult<void, std::unique_ptr<int>> OrReturn() {
       co_await F1().OrReturn(MakeUnique(5));
+      co_return {};
    }
 };
 TEST_F(TCoResult_Void_OrReturns_WithMovableOnly, OrReturnNewErr) {
@@ -459,9 +483,11 @@ struct TCoResult_Void_OrReturns_WithReferences: public ::testing::Test {
          EXPECT_EQ(ExistingErr, "Err");
          return ErrReference;
       });
+      co_return {};
    }
    TCoResult<void, std::string> OrReturn() {
       co_await F1().OrReturn(ErrReference);
+      co_return {};
    }
 };
 TEST_F(TCoResult_Void_OrReturns_WithReferences, OrReturnNewErr) {
@@ -504,6 +530,7 @@ struct TCoResult_Mixed_NonVoidToVoid: public ::testing::Test {
    }
    TCoResult<void, double> F2() {
       co_await F1().OrReturn(2);
+      co_return {};
    }
 };
 TEST_F(TCoResult_Mixed_NonVoidToVoid, OrReturnNewErr) {

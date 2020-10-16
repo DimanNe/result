@@ -89,7 +89,12 @@ namespace NDiRes {
             // From await_suspend => We know it must be an rvalue, hence move()
             ReturnResult = std::move(Error);
          }
-         void return_void() noexcept {}
+         template <class T>
+         void return_value(T &&Something) noexcept {   // from co_return expr
+            ReturnResult = std::forward<T>(Something);
+         }
+         // For being ablt to write: co_return {};
+         void return_value(std::initializer_list<int>) noexcept {}
          void unhandled_exception() noexcept {
             std::terminate();
          }
