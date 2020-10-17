@@ -57,6 +57,13 @@ TOk Ok = co_await ExpressionOfTypeResult<TOk, TErr> . OrPrependErrMsgAndReturn()
   (2) `OrReturnNewErr(...)`, (3) `OrReturn(...)`.
 
 
+
+##### More features / description:
+<details><summary>... if you wish</summary><p>
+
+[Here](https://github.com/DimanNe/scripts/tree/master/backup) is a real/larger project that uses `TCoResult<>`.
+
+
 ##### A real-world example of before-after:
 Before:
 ```
@@ -83,11 +90,6 @@ Note: while error message in the latter case will be different, it will contain 
 in particular instead of "*Failed while deserialising TBlobInfo from object labels: ...*" it will be:
 "*Failed to get BlobInfoFromGoogleCloud @ Line 123: ...*"
 
-
-##### More features / description:
-<details><summary>... if you wish</summary><p>
-
-[Here](https://github.com/DimanNe/scripts/tree/master/backup) is a real/larger project that uses `TCoResult<>`.
 
 
 ##### No redundant/temporary Result<void, TErr> variables
