@@ -42,11 +42,7 @@ set(result_include_directory "${CMAKE_INSTALL_INCLUDEDIR}/${result_directory}")
 
 install(TARGETS result
         EXPORT resultTargets
-        ARCHIVE #
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        COMPONENT result_Development
-        INCLUDES #
-        DESTINATION "${result_include_directory}")
+        INCLUDES DESTINATION "${result_include_directory}")
 
 set(result_install_cmakedir
         "${CMAKE_INSTALL_LIBDIR}/cmake/${result_directory}")

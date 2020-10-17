@@ -82,13 +82,9 @@ jobs:
         run: cmake -P cmake/ciBuild.cmake -- . build/install
           ${{ steps.cores.outputs.plus_one }}
 
-      - name: Install library
-        run: cmake --install build/install --config Release
-
       - name: Build tests
         run: cmake -P cmake/ciBuild.cmake -- test build/test
           ${{ steps.cores.outputs.plus_one }}
-          -D TEST_INSTALLED_VERSION:BOOL=YES
 
       - name: Run tests
         working-directory: build/test
