@@ -19,9 +19,9 @@ jobs:
     - name: Install fresh clang
       shell: bash
       run: |
-         wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-         add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-10 main"
-         apt-get update && apt-get install -y clang-10 clang-format-10 libc++-10-dev
+         wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+         sudo add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-10 main"
+         sudo apt-get update && sudo apt-get install -y clang-10 clang-format-10 libc++-10-dev
 
     - name: Configure CMake
       shell: bash
