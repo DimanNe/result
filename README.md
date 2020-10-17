@@ -12,7 +12,7 @@ First of all, an always-up-to-date example can be found
 [here](https://github.com/DimanNe/result/blob/master/examples/main.cpp).
 
 Secondly, here is before-after:
-##### Before:
+Before:
 ```
 /// Returns intefer on success, or explanation in std::string in case of an error
 TResult<int, std::string> ParseNumber(std::string_view FileName);
@@ -26,7 +26,7 @@ TResult<int, std::string> ReadSettings(std::string_view FileName) {
 }
 ```
 
-##### After:
+After:
 ```
 TResult<int, std::string> ParseNumber(std::string_view FileName);
 
@@ -53,6 +53,33 @@ TOk Ok = co_await ExpressionOfTypeResult<TOk, TErr> . OrPrependErrMsgAndReturn()
 * or **return from the function** what is specified as parameter of `OrPrependErrMsgAndReturn()` function.
   Note, in the implementation, there is a family of `Or..Return...` functions: (1) `OrPrependErrMsgAndReturn(...)`
   (2) `OrReturnNewErr(...)`, (3) `OrReturn(...)`.
+
+
+##### A real-world example of before-after:
+Before:
+```
+TResult<TTerm, std::string> BeginTermOr = ExtractInteger<TTerm>(Labels, BeginTermKey());
+if(BeginTermOr.IsErr()) {
+   std::ostringstream str;
+   str << "Failed while deserialising TBlobInfo from object labels: " << BeginTermOr.Err();
+   return str.str();
+}
+TResult<TTerm, std::string> EndTermOr = ExtractInteger<TTerm>(Labels, EndTermKey());
+if(EndTermOr.IsErr()) {
+   std::ostringstream str;
+   str << "Failed while deserialising TBlobInfo from object labels: " << EndTermOr.Err();
+   return str.str();
+}
+```
+
+After:
+```
+const TTerm BeginTerm = co_await ExtractInteger<TTerm>(Labels, BeginTermKey()).OrPrependErrMsgAndReturn();
+const TTerm EndTerm   = co_await ExtractInteger<TTerm>(Labels, EndTermKey()).OrPrependErrMsgAndReturn();
+```
+Note: while error message in the latter case will be different, it will contain all required information,
+in particular instead "*Failed while deserialising TBlobInfo from object labels: ...*" it will be:
+"*Failed to get BlobInfoFromGoogleCloud @ Line 123: ...*"
 
 
 ##### More features / description:
