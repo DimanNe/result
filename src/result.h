@@ -109,7 +109,7 @@ namespace NDiRes {
       }
       template <size_t IndexToSet, class... Ts>
       TResult(const NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> &) noexcept {
-         static_assert(NPrivate::PostponeStaticAssert<IndexToSet, Ts...>,
+         static_assert(NPrivate::PostponeStaticAssert<Ts...>,
                        "TOkOrErrWrapper can be produced only by OkRes()/ErrRes() helper function, and is "
                        "supposed to be immediately consumed by/assigned to a Result<>, do not store it in "
                        "other variables");
