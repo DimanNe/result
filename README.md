@@ -78,7 +78,7 @@ const TTerm BeginTerm = co_await ExtractInteger<TTerm>(Labels, BeginTermKey()).O
 const TTerm EndTerm   = co_await ExtractInteger<TTerm>(Labels, EndTermKey()).OrPrependErrMsgAndReturn();
 ```
 Note: while error message in the latter case will be different, it will contain all required information,
-in particular instead "*Failed while deserialising TBlobInfo from object labels: ...*" it will be:
+in particular instead of "*Failed while deserialising TBlobInfo from object labels: ...*" it will be:
 "*Failed to get BlobInfoFromGoogleCloud @ Line 123: ...*"
 
 
