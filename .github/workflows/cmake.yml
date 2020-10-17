@@ -1,4 +1,4 @@
-name: CMake On Push
+name: CMake
 
 on: [push]
 
@@ -16,23 +16,12 @@ jobs:
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
       
-    #- name: Install fresh clang
-    #  shell: bash
-      # run: |
-      #   wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      #   sudo add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-10 main"
-      #   sudo apt-get install -y aptitude
-      #   sudo aptitude purge libc++-dev libc++1 libc++abi-dev libc++abi1
-      #   sudo aptitude update && sudo aptitude install -y clang-10 clang-format-10 libc++-10-dev
-
     - name: Configure CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build
       run: cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++-10 -DCMAKE_C_COMPILER=clang-10 $GITHUB_WORKSPACE
-      # run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE --verbose -j
