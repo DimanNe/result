@@ -1,33 +1,70 @@
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
-project(diresult_root LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.12)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    set(IS_TOPLEVEL_PROJECT TRUE)
-else()
-    set(IS_TOPLEVEL_PROJECT FALSE)
+project(dimanne_result VERSION 0.0.1 LANGUAGES CXX)
+
+# ---- Warning guard ----
+
+# Protect dependents from this project's warnings if the guard isn't disabled
+set(result_warning_guard "SYSTEM")
+if(result_INCLUDE_WITHOUT_SYSTEM)
+  set(result_warning_guard "")
 endif()
 
+# ---- Define library ----
 
-##############################################################################################################
-# Set options/settings for our projects if we are top-level project
+add_library(result INTERFACE)
+add_library(DimanNe::result ALIAS result)
 
-if(IS_TOPLEVEL_PROJECT)
-   set(CMAKE_CXX_STANDARD 20)
-   set(CMAKE_CXX_STANDARD_REQUIRED ON)
-   set(CMAKE_CXX_EXTENSIONS OFF)
-   add_compile_options(-Wall -Wextra -pedantic -Werror)
-   add_compile_options(-stdlib=libc++)
-   add_link_options(-stdlib=libc++)
+target_compile_features(result INTERFACE cxx_std_20)
+
+target_compile_options(result
+        INTERFACE
+        "$<$<CXX_COMPILER_ID:MSVC>:/await /permissive->")
+
+target_include_directories(result
+        ${result_warning_guard}
+        INTERFACE
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(result INTERFACE -stdlib=libc++)
+elseif(NOT MSVC)
+  message(FATAL_ERROR "Compiler not supported: ${CMAKE_CXX_COMPILER_ID}")
 endif()
 
+# ---- Install ----
 
-##############################################################################################################
-# Tell CMake what to build
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 
-add_subdirectory(src)
-add_subdirectory(examples)
+set(result_directory "result-${PROJECT_VERSION}")
+set(result_include_directory "${CMAKE_INSTALL_INCLUDEDIR}/${result_directory}")
 
-if(NOT IS_TOPLEVEL_PROJECT) # Tests require (at least) gtest/gmock, which we do not provide being a top-level project
-   enable_testing()
-   add_subdirectory(ut)
-endif()
+install(TARGETS result
+        EXPORT resultTargets
+        ARCHIVE #
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        COMPONENT result_Development
+        INCLUDES #
+        DESTINATION "${result_include_directory}")
+
+set(result_install_cmakedir
+        "${CMAKE_INSTALL_LIBDIR}/cmake/${result_directory}")
+
+write_basic_package_version_file(
+        resultConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMinorVersion
+        ARCH_INDEPENDENT)
+
+install(EXPORT resultTargets
+        FILE resultConfig.cmake # Install targets directly as the config
+        NAMESPACE DimanNe::
+        DESTINATION "${result_install_cmakedir}")
+
+install(FILES
+        "${PROJECT_BINARY_DIR}/resultConfigVersion.cmake"
+        DESTINATION "${result_install_cmakedir}")
+
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+        DESTINATION "${result_include_directory}")
