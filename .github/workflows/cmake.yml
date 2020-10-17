@@ -1,4 +1,4 @@
-name: CMake
+name: CMake On Push
 
 on: [push]
 
@@ -8,7 +8,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
@@ -22,6 +22,7 @@ jobs:
          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
          sudo add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-10 main"
          sudo apt-get install -y aptitude
+         sudo aptitude purge libc++-dev libc++1 libc++abi-dev libc++abi1
          sudo aptitude update && sudo aptitude install -y clang-10 clang-format-10 libc++-10-dev
 
     - name: Configure CMake
