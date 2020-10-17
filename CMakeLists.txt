@@ -7,6 +7,7 @@ else()
     set(IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
+
 ##############################################################################################################
 # Set options/settings for our projects if we are top-level project
 
@@ -15,6 +16,8 @@ if(IS_TOPLEVEL_PROJECT)
    set(CMAKE_CXX_STANDARD_REQUIRED ON)
    set(CMAKE_CXX_EXTENSIONS OFF)
    add_compile_options(-Wall -Wextra -pedantic -Werror)
+   add_compile_options(-stdlib=libc++)
+   add_link_options(-stdlib=libc++)
 endif()
 
 
