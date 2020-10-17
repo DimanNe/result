@@ -1,3 +1,5 @@
+[![CMake Actions Status](https://github.com/dimanne/result/workflows/CMake/badge.svg)](https://github.com/{userName}/{repoName}/actions)
+
 This repo contains `Result<Ok, Err>` (which is not very interesting, tbh) and **CoResult<Ok, Err> which
 is more interesting** as it exploits C++20 coroutines:
 1. to eradicate boilerplate associated with the Result-based approach to error-handling,
