@@ -21,6 +21,7 @@ jobs:
       run: |
          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
          sudo add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-10 main"
+         sudo apt-get install -y aptitude
          sudo aptitude update && sudo aptitude install -y clang-10 clang-format-10 libc++-10-dev
 
     - name: Configure CMake
