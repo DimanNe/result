@@ -8,7 +8,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04 # https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
 
     steps:
     - uses: actions/checkout@v2
@@ -16,14 +16,14 @@ jobs:
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
       
-    - name: Install fresh clang
-      shell: bash
-      run: |
-         wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-         sudo add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-10 main"
-         sudo apt-get install -y aptitude
-         sudo aptitude purge libc++-dev libc++1 libc++abi-dev libc++abi1
-         sudo aptitude update && sudo aptitude install -y clang-10 clang-format-10 libc++-10-dev
+    #- name: Install fresh clang
+    #  shell: bash
+      # run: |
+      #   wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+      #   sudo add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-10 main"
+      #   sudo apt-get install -y aptitude
+      #   sudo aptitude purge libc++-dev libc++1 libc++abi-dev libc++abi1
+      #   sudo aptitude update && sudo aptitude install -y clang-10 clang-format-10 libc++-10-dev
 
     - name: Configure CMake
       shell: bash
