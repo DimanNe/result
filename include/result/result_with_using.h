@@ -1,3 +1,3 @@
-#include "result.h"
+#include "result/result.h"
 
 using namespace NDiRes;
