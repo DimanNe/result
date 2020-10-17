@@ -58,6 +58,9 @@ TOk Ok = co_await ExpressionOfTypeResult<TOk, TErr> . OrPrependErrMsgAndReturn()
 ##### More features / description:
 <details><summary>... if you wish</summary><p>
 
+[Here](https://github.com/DimanNe/scripts/tree/master/backup) is a real/larger project that uses `TCoResult<>`.
+
+
 ##### No redundant/temporary Result<void, TErr> variables
 For `TResult<void, TErr>` you no longer need to create a variable that would hold the result (only
 to append error explanation later):
@@ -77,6 +80,29 @@ co_await Rename(Old, New).OrReturnNewErr([&](std::string &&Err) {
    return "Failed to rename from " + Old + " to " + New + " " + Err;
 });
 ```
+
+##### Known limitations
+* The `co_await` approach works only when you want to **propagate error** by returning control-flow
+  from a function to its caller. In other words, if you have a loop and want to accumulate/remember
+  all errors (and use `continue`) you need to do it in the "normal" way.
+* If you use `co_await`, and later in your function you want to `return`, you have to
+  use `co_return` instead.
+
+##### What if I forget to call co_await?
+You will not, struct returned by `Or...Return...` functions is marked with `[[nodiscard]]` attribute,
+so you will get (at least) a compiler warning.
+
+##### What if I assign temporary Result to an (lvalue) reference?
+In this case:
+```
+TCoResult<std::string, int> DoSomething();
+TCoResult<std::string, int> GetSomething() {
+   std::string & DANGLING_REFERENCE = co_await DoSomething().OrReturn(42);
+}
+```
+you will get a compiler error.
+[Commit](https://github.com/DimanNe/result/commit/171318571ed08930a339170746f670589da99b35) with the feature.
+
 
 </p></details>
 
