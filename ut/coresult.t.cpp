@@ -4,8 +4,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <string>
-#include <util/compiler.h>
-#include <util/memory.h>
 
 using ::testing::EndsWith;
 using ::testing::StartsWith;
@@ -49,10 +47,11 @@ TEST_F(TCoResult_NonVoid_SameTypes, Test) {
 
 struct TCoResult_NonVoid_CoAwaitTemporary: public ::testing::Test {
    TCoResult<std::unique_ptr<int>, std::string> F1() {
-      return MakeUnique(2);
+      return std::make_unique<int>(2);
    }
    TCoResult<std::unique_ptr<int>, std::string> OrPrependErrMsgAndReturn() {
-      // std::unique_ptr<int> &Ok = co_await F1().OrReturn(2); // Should not compile: rvalue cannot bind to non-const lvalue
+      // std::unique_ptr<int> &Ok = co_await F1().OrReturn(2); // Should not compile: rvalue cannot bind to
+      // non-const lvalue
       std::unique_ptr<int> Ok = co_await F1().OrPrependErrMsgAndReturn();
       std::cout << *Ok << std::endl;
       co_return std::move(Ok);
@@ -134,11 +133,11 @@ struct TCoResult_NonVoid_BothAreMovableOnly: public ::testing::Test {
    TCoResult<std::unique_ptr<int>, std::unique_ptr<double>> F1() {
       static int Counter = 1;
       if(++Counter % 2 == 0)
-         return ErrRes(MakeUnique(10.));
-      return OkRes(MakeUnique(2));
+         return ErrRes(std::make_unique<double>(10.));
+      return OkRes(std::make_unique<int>(2));
    }
    TCoResult<std::unique_ptr<int>, std::unique_ptr<double>> F2() {
-      std::unique_ptr<int> Ok = std::move(co_await F1().OrReturn(MakeUnique(5.)));
+      std::unique_ptr<int> Ok = std::move(co_await F1().OrReturn(std::make_unique<double>(5.)));
       co_return Ok;
    }
 };
@@ -171,7 +170,7 @@ struct TCoResult_NonVoid_DifferentTypes: public ::testing::Test {
    };
    TCoResult<std::unique_ptr<int>, TSomeStruct> F2() {
       std::string Ok = co_await F1().OrReturn(TSomeStruct());
-      co_return MakeUnique(Ok.size());
+      co_return std::make_unique<int>(Ok.size());
    }
 };
 TEST_F(TCoResult_NonVoid_DifferentTypes, Test) {
@@ -256,18 +255,18 @@ struct TCoResult_NonVoid_OrReturns_WithMovableOnly: public ::testing::Test {
    TCoResult<double, std::unique_ptr<int>> F1() {
       static int Counter = 1;
       if(++Counter % 2 == 0)
-         return MakeUnique(1);
+         return std::make_unique<int>(1);
       return 10.;
    }
    TCoResult<double, std::unique_ptr<int>> OrReturnNewErr() {
       double Ok = co_await F1().OrReturnNewErr([](std::unique_ptr<int> &&ExistingErr) {
          EXPECT_EQ(*ExistingErr, 1);
-         return MakeUnique(5);
+         return std::make_unique<int>(5);
       });
       co_return Ok;
    }
    TCoResult<double, std::unique_ptr<int>> OrReturn() {
-      double Ok = co_await F1().OrReturn(MakeUnique(5));
+      double Ok = co_await F1().OrReturn(std::make_unique<int>(5));
       co_return Ok;
    }
 };
@@ -447,11 +446,11 @@ struct TCoResult_Void_MovableOnly: public ::testing::Test {
    TCoResult<void, std::unique_ptr<double>> F1() {
       static int Counter = 1;
       if(++Counter % 2 == 0)
-         return ErrRes(MakeUnique(10.));
+         return ErrRes(std::make_unique<double>(10.));
       return {};
    }
    TCoResult<void, std::unique_ptr<double>> F2() {
-      co_await F1().OrReturn(MakeUnique(5.));
+      co_await F1().OrReturn(std::make_unique<double>(5.));
       co_return {};
    }
 };
@@ -564,18 +563,18 @@ struct TCoResult_Void_OrReturns_WithMovableOnly: public ::testing::Test {
    TCoResult<void, std::unique_ptr<int>> F1() {
       static int Counter = 1;
       if(++Counter % 2 == 0)
-         return MakeUnique(1);
+         return std::make_unique<int>(1);
       return {};
    }
    TCoResult<void, std::unique_ptr<int>> OrReturnNewErr() {
       co_await F1().OrReturnNewErr([](std::unique_ptr<int> &&ExistingErr) {
          EXPECT_EQ(*ExistingErr, 1);
-         return MakeUnique(5);
+         return std::make_unique<int>(5);
       });
       co_return {};
    }
    TCoResult<void, std::unique_ptr<int>> OrReturn() {
-      co_await F1().OrReturn(MakeUnique(5));
+      co_await F1().OrReturn(std::make_unique<int>(5));
       co_return {};
    }
 };
