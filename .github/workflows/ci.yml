@@ -81,5 +81,5 @@ jobs:
         run: cmake -P cmake/run_configure_and_build.cmake -- test ${{steps.cores.outputs.plus_one}}
 
       - name: Run tests
-        working-directory: build/test
+        working-directory: build
         run: ctest --verbose -j ${{steps.cores.outputs.plus_one}}
