@@ -1,0 +1,1 @@
+add_library(cxxabi STATIC cxxabi.h cxxabi.cpp)
