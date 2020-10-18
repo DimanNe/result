@@ -7,7 +7,7 @@ add_subdirectory(cxxabi) # Here we build a very low-level library (std::)
 link_libraries(cxxabi)
 
 # And sooner or later somebody wants to use the Result<> library:
-add_subdirectory(../ ./result_binary_dir)
+add_subdirectory(../../ ./result_binary_dir)
 # ... which results in errors like:
 # CMake Error: install(EXPORT "resultTargets" ...) includes target "result" which requires target "cxxabi" that is not in any export set.
 # CMake Error: install(EXPORT "GTestTargets" ...) includes target "gtest" which requires target "cxxabi" that is not in any export set.
