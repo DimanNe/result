@@ -26,11 +26,11 @@ jobs:
             cc: clang-10
             cxx: clang++-10
 
-    runs-on: ${{ matrix.conf.os }}
+    runs-on: ${{matrix.conf.os}}
 
     env:
-      CC: ${{ matrix.conf.cc }}
-      CXX: ${{ matrix.conf.cxx }}
+      CC: ${{matrix.conf.cc}}
+      CXX: ${{matrix.conf.cxx}}
 
     steps:
       - uses: actions/checkout@v2
@@ -43,8 +43,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_10.3.app
 
       - name: Build examples
-        run: cmake -P cmake/ciBuild.cmake -- examples build/examples
-          ${{ steps.cores.outputs.plus_one }}
+        run: cmake -P cmake/run_configure_and_build -- examples ${{steps.cores.outputs.plus_one}}
 
   tests:
     strategy:
@@ -65,8 +64,8 @@ jobs:
     runs-on: ${{ matrix.conf.os }}
 
     env:
-      CC: ${{ matrix.conf.cc }}
-      CXX: ${{ matrix.conf.cxx }}
+      CC: ${{matrix.conf.cc}}
+      CXX: ${{matrix.conf.cxx}}
 
     steps:
       - uses: actions/checkout@v2
@@ -79,8 +78,8 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_10.3.app
 
       - name: Build tests
-        run: cmake -P cmake/ciBuild.cmake -- test build/test ${{ steps.cores.outputs.plus_one }}
+        run: cmake -P cmake/run_configure_and_build -- test ${{steps.cores.outputs.plus_one}}
 
       - name: Run tests
         working-directory: build/test
-        run: ctest --verbose -j ${{ steps.cores.outputs.plus_one }}
+        run: ctest --verbose -j ${{steps.cores.outputs.plus_one}}
