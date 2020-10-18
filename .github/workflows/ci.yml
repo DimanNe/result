@@ -48,6 +48,7 @@ jobs:
   tests:
     strategy:
       matrix:
+        sanitiser: [none, asan, ubsan]
         conf:
           #- os: windows-latest
             #cc: cl
@@ -78,7 +79,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_10.3.app
 
       - name: Build tests
-        run: cmake -P cmake/run_configure_and_build.cmake -- test none ${{steps.cores.outputs.plus_one}}
+        run: cmake -P cmake/run_configure_and_build.cmake -- test ${{matrix.sanitiser}} ${{steps.cores.outputs.plus_one}}
 
       - name: Run tests
         working-directory: build
