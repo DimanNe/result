@@ -18,7 +18,7 @@ else()
   list(SUBLIST temp ${index} -1 args)
 endif()
 
-list(POP_FRONT args source build cores)
+list(POP_FRONT args source sanitiser_mode cores)
 
 
 # ------------------- Define exec function -------------------
@@ -61,5 +61,5 @@ endif()
 
 
 # ------------------- Configure & Build -------------------
-exec("${CMAKE_COMMAND}" -S "${source}" -B build -D CMAKE_INSTALL_PREFIX=build/prefix)
-exec("${CMAKE_COMMAND}" --build build -j ${cores})
+exec("${CMAKE_COMMAND}" -S "${source}" -B build -D sanitiser_mode=${sanitiser_mode} -D CMAKE_INSTALL_PREFIX=build/prefix)
+exec("${CMAKE_COMMAND}" --build build --verbose -j ${cores})
