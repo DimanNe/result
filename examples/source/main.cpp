@@ -1,6 +1,5 @@
-#include "../src/coresult_with_using.h"
-
 #include <iostream>
+#include <result/coresult_with_using.h>
 
 TCoResult<int, std::string> CreateSocket() {
    static int Counter = 1;
@@ -28,8 +27,9 @@ int main(int, char *[]) {
    // https://godbolt.org/z/8hxKTW
 
    // Expected output:
-   // Err(Failed to ReadSettings @ Line:20: Failed to ConnectSocket @ Line:17: Failed to OpenSocket @ Line:13:
-   // Failed to CreateSocket: SysErr: EINVAL Invalid argument)
+   // Err(Failed to ReadSettings @ Line:20: Failed to ConnectSocket @ Line:17:
+   // Failed to OpenSocket @ Line:13: Failed to CreateSocket: SysErr: EINVAL
+   // Invalid argument)
    //
    // ==== Second attempt ====
    // Ok(Here is our settings)
