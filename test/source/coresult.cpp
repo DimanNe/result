@@ -1,8 +1,7 @@
-#include "result/coresult_with_using.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <iostream>
+#include <result/coresult_with_using.h>
 #include <string>
 
 using ::testing::EndsWith;

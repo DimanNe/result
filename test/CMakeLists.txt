@@ -18,13 +18,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(gtest)
 
-option(TEST_INSTALLED_VERSION "Import the library using find_package" NO)
-if(TEST_INSTALLED_VERSION)
-  find_package(result REQUIRED CONFIG)
-else()
-  set(result_INCLUDE_WITHOUT_SYSTEM YES CACHE INTERNAL "")
-  FetchContent_Declare(result SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
-  FetchContent_MakeAvailable(result)
+if (NOT TARGET result)
+   include(FetchContent)
+   FetchContent_Declare(result SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+   FetchContent_MakeAvailable(result)
 endif()
 
 function(add_test)
@@ -34,7 +31,7 @@ function(add_test)
 
   target_compile_options("${target}" PRIVATE ${options})
   target_link_libraries("${target}" PRIVATE
-     DimanNe::result
+     result
      gmock
      gtest
      gtest_main
