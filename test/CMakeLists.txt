@@ -2,11 +2,20 @@ cmake_minimum_required(VERSION 3.12)
 
 project(result_tests CXX)
 
+# GTest needs to be compiled with "our" options to avoid undefined references to libc++ symbols
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+add_compile_options(-stdlib=libc++)
+add_link_options(-stdlib=libc++)
+
 include(FetchContent)
-FetchContent_Declare(gtest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG 870a6b5563e065b4b9fc3b633c4015ee17d2cbaa
-        UPDATE_DISCONNECTED YES)
+FetchContent_Declare(
+   gtest
+   GIT_REPOSITORY      https://github.com/google/googletest.git
+   GIT_TAG             870a6b5563e065b4b9fc3b633c4015ee17d2cbaa
+   UPDATE_DISCONNECTED YES
+)
 FetchContent_MakeAvailable(gtest)
 
 option(TEST_INSTALLED_VERSION "Import the library using find_package" NO)
@@ -18,27 +27,18 @@ else()
   FetchContent_MakeAvailable(result)
 endif()
 
-set(options /await /permissive-)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(options -stdlib=libc++)
-endif()
-
 function(add_test)
   cmake_parse_arguments(TEST "" "NAME;NAMESPACE" "" ${ARGN})
-
   set(target "${TEST_NAMESPACE}_${TEST_NAME}")
-
   add_executable("${target}" "source/${TEST_NAME}.cpp")
 
-  target_compile_features("${target}" PRIVATE cxx_std_20)
   target_compile_options("${target}" PRIVATE ${options})
-  target_include_directories("${target}" PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_link_libraries("${target}"
-          PRIVATE
-          DimanNe::result
-          gmock
-          gtest_main)
-
+  target_link_libraries("${target}" PRIVATE
+     DimanNe::result
+     gmock
+     gtest
+     gtest_main
+  )
   # Call original add_test
   _add_test(NAME "${TEST_NAMESPACE}.${TEST_NAME}" COMMAND "${target}")
 endfunction()

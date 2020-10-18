@@ -1,6 +1,6 @@
 #pragma once
 
-#include "result/result.h"
+#include "result.h"
 
 #include <cassert>
 #include <experimental/coroutine>

@@ -12,13 +12,22 @@ endif()
 
 # ---- Define library ----
 
-add_library(result INTERFACE)
+add_library(result STATIC
+   src/coresult_with_using.cpp
+   include/result/coresult_with_using.h
+   src/coresult.cpp
+   include/result/coresult.h
+   src/result.cpp
+   include/result/result.h
+   src/result_with_using.cpp
+   include/result/result_with_using.h
+)
 add_library(DimanNe::result ALIAS result)
 
-target_compile_features(result INTERFACE cxx_std_20)
+target_compile_features(result PUBLIC cxx_std_20)
 
 target_compile_options(result
-        INTERFACE
+        PUBLIC
         "$<$<CXX_COMPILER_ID:MSVC>:/await /permissive->")
 
 target_include_directories(result
@@ -27,7 +36,8 @@ target_include_directories(result
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(result INTERFACE -stdlib=libc++)
+  target_compile_options(result PUBLIC -stdlib=libc++)
+  target_link_options(result PUBLIC -stdlib=libc++)
 elseif(NOT MSVC)
   message(FATAL_ERROR "Compiler not supported: ${CMAKE_CXX_COMPILER_ID}")
 endif()
