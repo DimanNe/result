@@ -78,15 +78,9 @@ jobs:
         if: startsWith(matrix.conf.os, 'macos')
         run: sudo xcode-select -s /Applications/Xcode_10.3.app
 
-      - name: Build library
-        run: cmake -P cmake/ciBuild.cmake -- . build/install
-          ${{ steps.cores.outputs.plus_one }}
-
       - name: Build tests
-        run: cmake -P cmake/ciBuild.cmake -- test build/test
-          ${{ steps.cores.outputs.plus_one }}
+        run: cmake -P cmake/ciBuild.cmake -- test build/test ${{ steps.cores.outputs.plus_one }}
 
       - name: Run tests
         working-directory: build/test
-        run: ctest -C Release --output-on-failure -j
-          ${{ steps.cores.outputs.plus_one }}
+        run: ctest --verbose -j ${{ steps.cores.outputs.plus_one }}
