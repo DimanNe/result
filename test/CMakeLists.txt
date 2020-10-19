@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.12)
 
 project(result_tests CXX)
 
+add_subdirectory(cxxabi)
+link_libraries(cxxabi) # Must be linked to ALL subprojects of the project
+
+
 include(FetchContent)
 FetchContent_Declare(gtest
         GIT_REPOSITORY https://github.com/google/googletest.git
