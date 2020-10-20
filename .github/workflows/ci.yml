@@ -78,6 +78,9 @@ jobs:
         if: startsWith(matrix.conf.os, 'macos')
         run: sudo xcode-select -s /Applications/Xcode_10.3.app
 
+      - name: Test Result as a subproject
+        run: cmake test/subproject_test
+
       - name: Build tests
         run: cmake -P cmake/run_configure_and_build.cmake -- test ${{matrix.sanitiser}} ${{steps.cores.outputs.plus_one}}
 

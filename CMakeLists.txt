@@ -44,33 +44,37 @@ endif()
 
 # ---- Install ----
 
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
+option(RESULT_DO_INSTALL "Installs result" OFF)
 
-set(result_directory "result-${PROJECT_VERSION}")
-set(result_include_directory "${CMAKE_INSTALL_INCLUDEDIR}/${result_directory}")
+if(RESULT_DO_INSTALL)
+    include(CMakePackageConfigHelpers)
+    include(GNUInstallDirs)
 
-install(TARGETS result
-        EXPORT resultTargets
-        INCLUDES DESTINATION "${result_include_directory}")
+    set(result_directory "result-${PROJECT_VERSION}")
+    set(result_include_directory "${CMAKE_INSTALL_INCLUDEDIR}/${result_directory}")
 
-set(result_install_cmakedir
-        "${CMAKE_INSTALL_LIBDIR}/cmake/${result_directory}")
+    install(TARGETS result
+            EXPORT resultTargets
+            INCLUDES DESTINATION "${result_include_directory}")
 
-write_basic_package_version_file(
-        resultConfigVersion.cmake
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY SameMinorVersion
-        ARCH_INDEPENDENT)
+    set(result_install_cmakedir
+            "${CMAKE_INSTALL_LIBDIR}/cmake/${result_directory}")
 
-install(EXPORT resultTargets
-        FILE resultConfig.cmake # Install targets directly as the config
-        NAMESPACE DimanNe::
-        DESTINATION "${result_install_cmakedir}")
+    write_basic_package_version_file(
+            resultConfigVersion.cmake
+            VERSION ${PROJECT_VERSION}
+            COMPATIBILITY SameMinorVersion
+            ARCH_INDEPENDENT)
 
-install(FILES
-        "${PROJECT_BINARY_DIR}/resultConfigVersion.cmake"
-        DESTINATION "${result_install_cmakedir}")
+    install(EXPORT resultTargets
+            FILE resultConfig.cmake # Install targets directly as the config
+            NAMESPACE DimanNe::
+            DESTINATION "${result_install_cmakedir}")
 
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-        DESTINATION "${result_include_directory}")
+    install(FILES
+            "${PROJECT_BINARY_DIR}/resultConfigVersion.cmake"
+            DESTINATION "${result_install_cmakedir}")
+
+    install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+            DESTINATION "${result_include_directory}")
+endif()
