@@ -4,12 +4,7 @@ project(${Project} CXX)
 
 # ------------------------------------- Handle sanitisers settings -------------------------------------
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    set(IS_TOPLEVEL_PROJECT TRUE)
-else()
-    set(IS_TOPLEVEL_PROJECT FALSE)
-endif()
-if(IS_TOPLEVEL_PROJECT)
+if(NOT RESULT_IS_BUILT_AS_A_PART_OF_MONOREPO)
    if(sanitiser_mode STREQUAL none OR NOT sanitiser_mode)
    else()
       add_compile_options(-fno-omit-frame-pointer -fno-optimize-sibling-calls
@@ -55,8 +50,10 @@ endif()
 
 # ------------------------------------- -------------------------------------
 # GTest needs to be compiled with "our" options to avoid undefined references to libc++ symbols
-add_compile_options(-stdlib=libc++)
-add_link_options(-stdlib=libc++)
+if(NOT RESULT_IS_BUILT_AS_A_PART_OF_MONOREPO)
+   add_compile_options(-stdlib=libc++)
+   add_link_options(-stdlib=libc++)
+endif()
 if (NOT TARGET gtest)
    include(FetchContent)
    FetchContent_Declare(
