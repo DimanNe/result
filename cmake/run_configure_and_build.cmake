@@ -61,5 +61,5 @@ endif()
 
 
 # ------------------- Configure & Build -------------------
-exec("${CMAKE_COMMAND}" -S "${source}" -B build -D sanitiser_mode=${sanitiser_mode} -D CMAKE_INSTALL_PREFIX=build/prefix)
+exec("${CMAKE_COMMAND}" -S "${source}" -B build -D RESULT_IS_BUILT_AS_A_PART_OF_MONOREPO=OFF -D sanitiser_mode=${sanitiser_mode} -D CMAKE_INSTALL_PREFIX=build/prefix)
 exec("${CMAKE_COMMAND}" --build build --verbose -j ${cores})
