@@ -33,7 +33,7 @@ namespace NDiRes {
 
       TResult() noexcept = default;
       template <class T>
-      TResult(T && Err, std::enable_if_t<IsConvertibleToErr<T>()> * = nullptr) noexcept:
+      TResult(T &&Err, std::enable_if_t<IsConvertibleToErr<T>()> * = nullptr) noexcept:
           Optional(std::in_place, std::forward<T>(Err)) {}
 
       bool operator==(const TSelf &Another) const noexcept {
@@ -83,8 +83,8 @@ namespace NDiRes {
             else   // We were given several arguments => contruct TErr type out of them and compare
                return IsErr() &&
                       Err() ==
-                         std::apply([](auto &&... Vs) { return TErr {std::forward<decltype(Vs)>(Vs)...}; },
-                                    std::move(Wrapper.Tuple));
+                          std::apply([](auto &&...Vs) { return TErr {std::forward<decltype(Vs)>(Vs)...}; },
+                                     std::move(Wrapper.Tuple));
          }
       }
       template <size_t IndexToSet, class... Ts>
@@ -103,8 +103,8 @@ namespace NDiRes {
                        "also specified argument(s) in OkRes(x) for the void type");
       }
       template <class... Ts>
-      TResult(NPrivate::TOkOrErrWrapper<NPrivate::ErrIndex, Ts...> && Wrapper) noexcept {
-         std::apply([this](auto &&... Vs) { Optional.template emplace(std::forward<decltype(Vs)>(Vs)...); },
+      TResult(NPrivate::TOkOrErrWrapper<NPrivate::ErrIndex, Ts...> &&Wrapper) noexcept {
+         std::apply([this](auto &&...Vs) { Optional.template emplace(std::forward<decltype(Vs)>(Vs)...); },
                     std::move(Wrapper.Tuple));
       }
       template <size_t IndexToSet, class... Ts>
@@ -144,11 +144,11 @@ namespace NDiRes {
 
    public:
       template <class T>
-      TResult(T && ok, std::enable_if_t<IsConvertibleOnlyToOk<T>()> * = nullptr) noexcept:
-         Storage(std::forward<T>(ok)) {}
+      TResult(T &&ok, std::enable_if_t<IsConvertibleOnlyToOk<T>()> * = nullptr) noexcept:
+          Storage(std::forward<T>(ok)) {}
 
       template <class T>
-      TResult(T && err, std::enable_if_t<IsConvertibleOnlyToErr<T>()> * = nullptr) noexcept:
+      TResult(T &&err, std::enable_if_t<IsConvertibleOnlyToErr<T>()> * = nullptr) noexcept:
           Storage(std::forward<T>(err)) {}
 
       template <class T>
@@ -217,9 +217,8 @@ namespace NDiRes {
                return IsOk() && Ok() == std::get<0>(Wrapper.Tuple);
             else
                return IsOk() &&
-                      Ok() ==
-                         std::apply([](auto &&... Vs) { return TOk {std::forward<decltype(Vs)>(Vs)...}; },
-                                    std::move(Wrapper.Tuple));
+                      Ok() == std::apply([](auto &&...Vs) { return TOk {std::forward<decltype(Vs)>(Vs)...}; },
+                                         std::move(Wrapper.Tuple));
          } else {   // IndexToSet == NPrivate::ErrIndex
             // We Compare TResult<void, TErr> with ErrRes() or ErrRes(Something)
             if constexpr(sizeof...(Ts) == 1)
@@ -227,8 +226,8 @@ namespace NDiRes {
             else
                return IsErr() &&
                       Err() ==
-                         std::apply([](auto &&... Vs) { return TErr {std::forward<decltype(Vs)>(Vs)...}; },
-                                    std::move(Wrapper.Tuple));
+                          std::apply([](auto &&...Vs) { return TErr {std::forward<decltype(Vs)>(Vs)...}; },
+                                     std::move(Wrapper.Tuple));
          }
       }
       template <size_t IndexToSet, class... Ts>
@@ -240,16 +239,16 @@ namespace NDiRes {
       // Initialisation from TOkOrErrWrapper
 
       template <size_t IndexToSet, class... Ts>
-      TResult(NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> && Wrapper) noexcept: TResult() {
+      TResult(NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> &&Wrapper) noexcept: TResult() {
          std::apply(
-             [this](auto &&... Vs) {
+             [this](auto &&...Vs) {
                 Storage.template emplace<IndexToSet>(std::forward<decltype(Vs)>(Vs)...);
              },
              std::move(Wrapper.Tuple));
       }
       template <size_t IndexToSet, class... Ts>
       TResult(const NPrivate::TOkOrErrWrapper<IndexToSet, Ts...> &) noexcept {
-         static_assert(NPrivate::PostponeStaticAssert<IndexToSet, Ts...>,
+         static_assert(NPrivate::PostponeStaticAssert<Ts...>,
                        "TOkOrErrWrapper can be produced only by OkRes()/ErrRes() helper function, and is "
                        "supposed to be immediately consumed by/assigned to a Result<>, do not store it in "
                        "other variables");
@@ -286,11 +285,11 @@ namespace NDiRes {
       return {};
    }
    template <class... Ts>
-   NPrivate::TOkOrErrWrapper<NPrivate::OkIndex, Ts...> OkRes(Ts &&... Vs) noexcept {
+   NPrivate::TOkOrErrWrapper<NPrivate::OkIndex, Ts...> OkRes(Ts &&...Vs) noexcept {
       return {{std::forward<Ts>(Vs)...}};
    }
    template <class... Ts>
-   NPrivate::TOkOrErrWrapper<NPrivate::ErrIndex, Ts...> ErrRes(Ts &&... Vs) noexcept {
+   NPrivate::TOkOrErrWrapper<NPrivate::ErrIndex, Ts...> ErrRes(Ts &&...Vs) noexcept {
       return {{std::forward<Ts>(Vs)...}};
    }
 }   // namespace NDiRes
