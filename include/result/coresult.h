@@ -3,7 +3,7 @@
 #include "result.h"
 
 #include <cassert>
-#include <experimental/coroutine>
+#include <coroutine>
 
 namespace NDiRes {
 
@@ -56,7 +56,7 @@ namespace NDiRes {
       using promise_type = TPromise;
 
    private:
-      using THandle = std::experimental::coroutine_handle<TPromise>;
+      using THandle = std::coroutine_handle<TPromise>;
       class TReturn {
       public:
          TReturn(const TReturn &) = delete;
@@ -77,10 +77,10 @@ namespace NDiRes {
          TReturn get_return_object() noexcept {
             return {THandle::from_promise(*this)};
          }
-         std::experimental::suspend_never initial_suspend() noexcept {
+         std::suspend_never initial_suspend() noexcept {
             return {};
          }
-         std::experimental::suspend_always final_suspend() noexcept {
+         std::suspend_always final_suspend() noexcept {
             return {};
          }
          TResult<void, TErr> ReturnResult;
@@ -164,7 +164,7 @@ namespace NDiRes {
       using promise_type = TPromise;
 
    private:
-      using THandle = std::experimental::coroutine_handle<TPromise>;
+      using THandle = std::coroutine_handle<TPromise>;
       class TReturn {
       public:
          TReturn(const TReturn &) = delete;
@@ -185,10 +185,10 @@ namespace NDiRes {
          TReturn get_return_object() noexcept {
             return {THandle::from_promise(*this)};
          }
-         std::experimental::suspend_never initial_suspend() noexcept {
+         std::suspend_never initial_suspend() noexcept {
             return {};
          }
-         std::experimental::suspend_always final_suspend() noexcept {
+         std::suspend_always final_suspend() noexcept {
             return {};
          }
          TResult<TOk, TErr> ReturnResult;
